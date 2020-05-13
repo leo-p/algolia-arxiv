@@ -74,10 +74,10 @@ def add_twitter_mentions_to_papers(papers, twitter_credentials, database_json, i
     return papers
 
 
-def create_algolia_index(papers, algolia_credentials, max_objects_per_batch=1000):
+def create_algolia_index(index_name, papers, algolia_credentials, max_objects_per_batch=1000):
     # Initialize the index
     client = SearchClient.create(algolia_credentials['app_id'], algolia_credentials['admin_key'])
-    index = client.init_index('arxiv-demo')
+    index = client.init_index(index_name)
     index.set_settings({
         'searchableAttributes': [
             'title',
@@ -109,6 +109,7 @@ if __name__ == '__main__':
     subparser = subparsers.add_parser('create_algolia_index', help=description, description=description)
     subparser.add_argument('--algolia_credentials', action='store', type=str, help='Algolia credentials JSON')
     subparser.add_argument('--database_json', action='store', type=str, help='Database JSON output')
+    subparser.add_argument('--index_name', action='store', type=str, help='Algolia index name')
 
     # Parse all the arguments
     args = parser.parse_args()
@@ -130,6 +131,7 @@ if __name__ == '__main__':
         # Retrieve arguments
         algolia_credentials = open_json_from_file(args.algolia_credentials)
         papers = open_json_from_file(args.database_json)
+        index_name = args.index_name
 
         # Initialize the algolia index
-        create_algolia_index(papers, algolia_credentials)
+        create_algolia_index(index_name, papers, algolia_credentials)
