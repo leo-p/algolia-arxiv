@@ -46,7 +46,7 @@ def get_latest_arxiv_articles(count):
     return papers
 
 
-def add_twitter_mentions_to_papers(papers, twitter_credentials, include_retweets=False):
+def add_twitter_mentions_to_papers(papers, twitter_credentials, database_json, include_retweets=False):
     # Intialize the API client
     api = twitter.Api(
         consumer_key=twitter_credentials['api_key'],
@@ -56,7 +56,7 @@ def add_twitter_mentions_to_papers(papers, twitter_credentials, include_retweets
         sleep_on_rate_limit=True
     )
 
-    for paper in tqdm(papers):
+    for ii, paper in enumerate(tqdm(papers)):
         # Compute the number of tweets and retweets for both arxiv urls
         arxiv_id = paper['url'].split('http://arxiv.org/abs/')[1].split('v')[0]
         mentions = 0
@@ -66,6 +66,10 @@ def add_twitter_mentions_to_papers(papers, twitter_credentials, include_retweets
                 if include_retweets:
                     mentions += len(api.GetRetweets(statusid=tweet.id_str))
         paper['twitter_mentions'] = mentions
+
+        # Add resilience to twitter api rate limiting
+        if (ii + 1) % 15 == 0:
+            save_json_to_file(papers, database_json, pretty=True)
 
     return papers
 
@@ -120,10 +124,7 @@ if __name__ == '__main__':
         papers = get_latest_arxiv_articles(arxiv_count)
 
         # Retrieve twitter mentions
-        papers = add_twitter_mentions_to_papers(papers, twitter_credentials)
-
-        # Save JSON to file
-        save_json_to_file(papers, database_json, pretty=True)
+        add_twitter_mentions_to_papers(papers, twitter_credentials, database_json)
 
     elif cmd == 'create_algolia_index':
         # Retrieve arguments
